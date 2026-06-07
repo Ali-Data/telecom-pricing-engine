@@ -1,0 +1,10 @@
+# Ignore data files
+*.csv
+*.xlsx
+
+# Ignore trained models
+*.pkl
+
+# Ignore Python cache
+__pycache__/
+.DS_Store
