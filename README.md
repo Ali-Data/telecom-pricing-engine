@@ -1,3 +1,35 @@
+# 🚀 AI-Driven Prescriptive Pricing & Churn Optimization Engine
+
+![Python](https://img.shields.io/badge/Python-3.9%2B-blue.svg)
+![dbt](https://img.shields.io/badge/dbt-Data_Engineering-FF694B.svg)
+![XGBoost](https://img.shields.io/badge/XGBoost-Machine_Learning-green.svg)
+![Streamlit](https://img.shields.io/badge/Streamlit-UI-red.svg)
+![Status](https://img.shields.io/badge/Status-Production_Ready-success.svg)
+
+## 📌 Executive Summary
+Traditional churn prediction models suffer from a fundamental flaw: they blindly identify *who* is leaving, leading to blanket promotional campaigns that cause severe **revenue cannibalization**. 
+
+This repository contains an end-to-end **Prescriptive Machine Learning Pipeline** developed for the Telecommunications/ISP industry. Instead of binary churn prediction, this system acts as a financial guardrail. It utilizes **Theory-Guided Machine Learning (Microeconomic Shape Constraints)** and **Expected Value (EV) simulations** to dynamically allocate retention discounts only when mathematically justified, thereby maximizing overall portfolio ROI.
+
+## 🏗️ System Architecture
+The project is structured as a full-stack MLOps pipeline:
+
+1. **Data Engineering Layer (dbt & SQL):**
+   - Ingests raw transactional logs.
+   - Uses advanced window functions to reverse-engineer marketing label noise.
+   - Extracts underlying `catalog_price` and uncovers `latent_discount_percentages`.
+2. **Predictive Layer (3-Class XGBoost):**
+   - Moves beyond binary classification to a 3-state Markovian space: `Accept`, `Downgrade (Revenue Churn)`, and `Full Churn`.
+   - Incorporates **Monotonic Constraints** to enforce rational economic behavior (+1 strict correlation between price shocks and churn risk), preventing spurious correlations.
+   - Outputs are calibrated using **Isotonic Regression** to reflect true market probabilities.
+3. **Prescriptive Layer (Financial Simulator):**
+   - Runs parallel universe simulations across a grid of discount scenarios (0% to 30%).
+   - Calculates the Expected Value (EV) for each scenario and prescribes the optimal individual discount to maximize corporate revenue.
+4. **Interactive Dashboard (Streamlit):**
+   - A real-time decision support system for marketing and pricing teams to analyze elasticity and trigger targeted retention campaigns.
+
+---
+
 # Causal Dynamic Pricing & Revenue Churn Optimization Engine (Telecom/ISP)
 
 An end-to-end production-grade Data & Machine Learning pipeline that transitions a telecom provider from fixed static pricing to an enterprise-level **Hyper-Personalized Dynamic Discounting System**. 
@@ -10,89 +42,77 @@ This system models customer behavior in a 3-class paradigm (**Accept, Downgrade,
 
 To mirror production environments, this repository separates data warehouse transformations from the machine learning orchestration layers.
 
-    ├── dbt_telecom/                  # Data Engineering Layer (dbt Project)
-    │   ├── dbt_project.yml
-    │   ├── models/
-    │   │   ├── staging/
-    │   │   │   └── stg_telecom_data.sql
-    │   │   └── marts/
-    │   │       └── mart_telecom_features.sql
-    ├── ml_pipeline/                  # Machine Learning Layer
-    │   ├── train_multiclass.py       # Hyperparameter tuning & XGBoost training
-    │   └── calibration.py            # Isotonic Regression probability calibration
-    ├── simulator/                    # Decision Optimization Layer
-    │   └── discount_simulator.py     # Parallel-universe simulation & EV optimization
-    ├── app/                          # Business Interface
-    │   └── web_dashboard.py          # Streamlit UI for the Marketing Team
-    ├── requirements.txt              # Dependency management
-    └── README.md                     # Documentation (This file)
+    telecom-pricing-engine/
+    ├── dbt_telecom/                         # Data Engineering & Transformations
+    │   ├── models/                          # SQL models (staging, intermediate, marts)
+    │   └── dbt_project.yml                  # dbt configuration
+    ├── ml_pipeline/                         # MLOps & Diagnostic Suite
+    │   ├── feature_robustness_test.py       # Ablation studies on latent features
+    │   ├── financial_sensitivity_analysis.py# EV simulations under market volatility
+    │   ├── model_explainability.py          # SHAP constraint validation plots
+    │   ├── model_sanity_check.py            # Edge-case elasticity testing
+    │   └── strategy_comparison_test.py      # Binary vs. 3-Class ROI benchmarking
+    ├── app/                                 # Production UI
+    │   └── streamlit_app.py                 # Interactive pricing dashboard
+    ├── data/                                # Sample datasets (Git-ignored in production)
+    ├── requirements.txt                     # Environment dependencies
+    └── README.md                            # Project documentation
 
 ---
-## ⚡ Business Strategy & Core Innovations
 
-### 1. 3-Class Revenue Churn Paradigm
-Traditional churn models treat customer attrition as a binary problem (0 or 1). In reality, customers frequently choose to **downgrade** to cheaper packages rather than leaving completely. This model independently predicts three distinct future user paths within a **15-Day Grace Period**:
+## 🛠️ MLOps Diagnostic Suite
 
-* **Class 0 (Accept):** Re-purchases a package within 15 days with equal or higher monthly ARPU.
-* **Class 1 (Downgrade):** Re-purchases a package within 15 days but opts for a cheaper configuration (Revenue Churn).
-* **Class 2 (Churn):** Fails to purchase any package within 15 days after expiration.
+To ensure the model is **robust**, **interpretable**, and **financially viable** before production deployment, this repository includes a comprehensive suite of diagnostic scripts in the `ml_pipeline/` directory:
 
-### 2. Reverse-Engineering Hidden Discounts (`Catalog_Price`)
-Marketing teams often create duplicate products (e.g., `Zomorod-Standard` vs `Zomorod-Promotion`) to apply stealth discounts, creating immense label noise. The data engineering layer aggregates products by their physical properties (**Duration, Bandwidth, Gigabytes, Static IP**) within each calendar month and defines the `Catalog_Price` as the mathematical maximum price paid. The real discount percentage is then extracted dynamically:
+- **`model_explainability.py`**  
+  Validates the injection of microeconomic shape constraints using SHAP dependence plots. Proves the model successfully avoids spurious correlations.
 
-> **Hidden Discount Percentage = (Catalog Price - Actual Paid Price) / Catalog Price**
+- **`feature_robustness_test.py`**  
+  Ablation study that quantifies the informational gain of reverse-engineered latent marketing variables.
 
-### 3. Causal Microeconomic Constraints
-Standard machine learning models often suffer from a false correlation: *"Higher prices lead to lower churn"*, because historically, only highly loyal VIP users bought expensive packages. We explicitly inject economic rationality into the XGBoost architecture via `monotone_constraints`, forcing a strict positive relationship (+1) between price indicators (`arpu`, `arpu_trend`, `catalog_price`) and risk probabilities.
+- **`strategy_comparison_test.py`**  
+  Benchmarks the financial ROI of the proposed Prescriptive AI against traditional Binary Churn models.
 
-### 4. Probability Calibration for ROI Estimation
-Tree-based classifiers with class weighting (`sample_weight`) distort raw prediction probabilities into uncalibrated risk scores. Since our financial optimization module directly multiplies these probabilities by monetary values, **calibration is mathematically mandatory**. We run **Isotonic Regression** over the XGBoost output to guarantee that a 40% predicted risk reflects exactly a 40% empirical attrition rate in the market, protecting the company from handing out unnecessary discounts.
+- **`financial_sensitivity_analysis.py`**  
+  Simulates Total Portfolio Expected Value under varying market response parameters.
+
+- **`model_sanity_check.py`**  
+  Edge-case elasticity testing by injecting synthetic "high-risk" profiles.
 
 ---
-## 🛠️ Implementation Details
 
-### 1. Data Engineering Layer (dbt/SQL)
-The `mart_telecom_features.sql` model processes analytical transaction logs, handles temporal window functions, computes monthly price shocks, and builds the 3-class target variable.
 
-    -- Sample dbt/SQL logic
-    WITH catalog_pricing AS (
-        SELECT *, MAX(Price) OVER (
-            PARTITION BY DATE_TRUNC('month', PurchaseDate), Duration, Bandwidth, Gig_Product, Has_Static_IP
-        ) AS Catalog_Price
-        FROM staging
-    )
+## 🚀 How to Run the Pipeline
 
-### 2. Machine Learning Layer (Python)
-Trains a multi-class XGBoost classifier with randomized hyperparameter search and wraps the optimal estimator inside an Isotonic Calibration layer.
-
-    # ml_pipeline/train_multiclass.py
-    xgb_base = xgb.XGBClassifier(objective='multi:softprob', num_class=3)
-    search = RandomizedSearchCV(estimator=xgb_base, param_distributions=param_grid)
-    search.fit(X_train, y_train, sample_weight=train_weights)
+### 1. Environment Setup
     
-    calibrated_model = CalibratedClassifierCV(estimator=search.best_estimator_, method='isotonic')
+    git clone <your-repository-url>
+    cd telecom-pricing-engine
+    pip install -r requirements.txt
 
-### 3. Parallel-Universe Simulator
-Runs an analytical simulation testing pricing scenarios from 0% to 30% discount. It dynamically computes the financial Expected Value (EV):
+### 2. Run Data Engineering (dbt)
 
-    # Expected Value Formula with Downgrade Penalty Ratio (0.70)
-    df_expanded['EV'] = (df_expanded['P_Accept'] * df_expanded['offered_price']) + \
-                        (df_expanded['P_Downgrade'] * (df_expanded['offered_price'] * 0.70))
+    cd dbt_telecom
+    dbt run
+    cd ..
+    
+### 3. Run MLOps Diagnostics
 
----
+    python ml_pipeline/model_explainability.py
+    python ml_pipeline/strategy_comparison_test.py
+    python ml_pipeline/feature_robustness_test.py
+    python ml_pipeline/financial_sensitivity_analysis.py
+    python ml_pipeline/model_sanity_check.py
 
-## 🚀 Impact & Results
-On a validation cohort of 2,000 production customers, the deployment of this system achieved:
+### 4. Launch Production Dashboard
+    Bash
+    streamlit run app/streamlit_app.py
 
-* **89.6% of users** correctly flagged as low-risk, removing unnecessary promotions.
-* **10.4% of high-risk users** targeted with surgical, customized discounts (5% to 30%).
-* **Maximized ROI** achieved purely through localized pricing efficiency.
+## 📚 Tech Stack
+Data Engineering: dbt, SQL
 
----
+Machine Learning: Python, XGBoost, Scikit-learn
 
-## 📝 Academic Contribution & Paper Core (Q1 Target)
-This framework introduces three structural contributions to the literature on computational revenue management:
+Explainability: SHAP
 
-1. **The Latent Discount Identification Framework:** Methodology to extract unobserved promotional variables via historical maximum feature grouping.
-2. **Causal Constraint Multi-Class Classifiers:** Integrates shape-enforced monotonic behavior within cross-entropy multi-class probability spaces.
-3. **Calibrated Expected Value Optimization:** Demonstrates mathematically why traditional uncalibrated algorithmic discounting yields negative financial utilities.
+Frontend: Streamlit
