@@ -108,6 +108,11 @@ To ensure the model is **robust**, **interpretable**, and **financially viable**
     Bash
     streamlit run app/streamlit_app.py
 
+## 🔄 Continuous Training (CI/CD)
+To maintain model freshness against evolving market dynamics and customer drift, this repository integrates a **Continuous Training (CT)** pipeline via **GitHub Actions**. 
+- A scheduled CRON job automatically triggers the `train_pipeline.py` workflow every Sunday at midnight.
+- The workflow fetches the latest feature store data, dynamically recalculates the EV thresholds, retrains the XGBoost prescriptive engine, and commits the updated model artifact (`.json`) back to the repository without human intervention.
+
 ## 📚 Tech Stack
 Data Engineering: dbt, SQL
 
