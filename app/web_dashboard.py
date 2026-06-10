@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import joblib
 import matplotlib.pyplot as plt
+import xgboost as xgb 
 import os
 
 # --- Page Configuration ---
@@ -25,7 +26,7 @@ def load_ai_brain():
         features = joblib.load(features_path)
         return model, features
     except Exception as e:
-        st.error("Error loading the AI model. Please ensure the pipeline has been executed.")
+        st.error(f"Error loading the AI model: {e}\nPlease ensure the pipeline has been executed and paths are correct.")
         return None, None
 
 model, feature_names = load_ai_brain()
@@ -64,7 +65,7 @@ if uploaded_file is not None and model is not None:
             if 'arpu_trend' in df_sim.columns and 'arpu' in df_sim.columns:
                 df_sim['prev_arpu_actual'] = df_sim['arpu'] - df_sim['arpu_trend']
             else:
-                st.error("CRITICAL ERROR: 'arpu' and 'arpu_trend' columns are missing!")
+                st.error("CRITICAL ERROR: 'arpu' and/or 'arpu_trend' columns are missing in the uploaded CSV!")
                 st.stop()
                 
             discount_scenarios = np.linspace(0.0, 0.30, 7)
@@ -75,14 +76,17 @@ if uploaded_file is not None and model is not None:
             df_expanded['offered_price'] = df_expanded['catalog_price'] * (1 - df_expanded['simulated_discount'])
             df_expanded['hidden_discount_amount'] = df_expanded['catalog_price'] - df_expanded['offered_price']
             
+            # Prevent division by zero in ARPU calculation
             df_expanded['arpu'] = np.where(df_expanded['duration'] > 0, df_expanded['offered_price'] / df_expanded['duration'], 0)
             df_expanded['arpu_trend'] = df_expanded['arpu'] - df_expanded['prev_arpu_actual']
             
-            try:
-                X_predict = df_expanded[feature_names]
-            except KeyError as e:
-                st.error(f"Missing required features in the uploaded dataset: {e}")
-                st.stop()
+            # Intelligent management of missing features: fill with zeros instead of stopping the program
+            for col in feature_names:
+                if col not in df_expanded.columns:
+                    df_expanded[col] = 0.0
+            
+            # Extract features in exactly the same order as the model was trained
+            X_predict = df_expanded[feature_names]
                 
             probs = model.predict_proba(X_predict)
             df_expanded['Prob_Accept'] = probs[:, 0]
@@ -93,6 +97,7 @@ if uploaded_file is not None and model is not None:
             df_expanded['Expected_Value'] = (df_expanded['Prob_Accept'] * df_expanded['offered_price']) + \
                                             (df_expanded['Prob_Downgrade'] * (df_expanded['offered_price'] * DOWNGRADE_REVENUE_RATIO))
                                             
+            # Find the row that has the highest expected value for each customer
             optimal_scenarios = df_expanded.loc[df_expanded.groupby('temp_user_id')['Expected_Value'].idxmax()].copy()
             
             # --- Rendering Results ---
