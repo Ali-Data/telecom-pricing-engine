@@ -33,9 +33,18 @@ def run_training_pipeline():
     
     # 3. Train Production Model
     print("[*] Retraining Prescriptive XGBoost Engine with new data...")
+    feature_names = X.columns.tolist()
+    constraints = []
+    for col in feature_names:
+        if col in ['arpu', 'arpu_trend', 'catalog_price']:
+            constraints.append(1) 
+        else:
+            constraints.append(0)
+            
     model = xgb.XGBClassifier(
         objective='multi:softprob', 
         num_class=3, 
+        monotone_constraints=tuple(constraints), # adding Monotonic Constraint to original model
         random_state=42, 
         n_jobs=-1
     )
