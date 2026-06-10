@@ -1,0 +1,44 @@
+name: MLOps Continuous Training & Automation
+
+on:
+  schedule:
+    # This command tells GitHub servers to retrain the model every Sunday at midnight
+    - cron: '0 0 * * 0'
+  workflow_dispatch:
+    # This option allows you to manually trigger the update via the GitHub UI
+
+jobs:
+  retrain:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    # In a fully corporate environment, the database connection information for running dbt is given here
+    # env:
+    #   DB_HOST: ${{ secrets.DB_HOST }}
+    #   DB_USER: ${{ secrets.DB_USER }}
+
+    - name: Execute Model Retraining Pipeline
+      run: |
+        python ml_pipeline/train_pipeline.py
+
+    - name: Commit and Push Updated Model Artifact
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git add models/production_xgboost_model.json
+        git diff-index --quiet HEAD || git commit -m "chore(mlops): automatically updated trained model artifact [skip ci]"
+        git push
